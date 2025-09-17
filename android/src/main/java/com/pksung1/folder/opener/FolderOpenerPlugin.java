@@ -65,26 +65,10 @@ public class FolderOpenerPlugin extends Plugin {
                 return;
             }
 
-            // Try to open with specific file manager apps first
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            Uri folderUri;
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                // For Android 7.0+ (API level 24+), we need to use FileProvider
-                folderUri = FileProvider.getUriForFile(
-                    getContext(),
-                    getContext().getPackageName() + ".fileprovider",
-                    folder
-                );
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            } else {
-                folderUri = Uri.fromFile(folder);
-            }
-
-            intent.setDataAndType(folderUri, "resource/folder");
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            // 폴더 열기 방법 1: 파일 매니저 앱으로 폴더 열기
+            boolean opened = false;
             
-            // Try to open with specific file manager apps
+            // 먼저 일반적인 파일 매니저 앱들로 시도
             String[] fileManagerPackages = {
                 "com.android.documentsui", // Android Files app
                 "com.google.android.documentsui", // Google Files app
@@ -98,28 +82,67 @@ public class FolderOpenerPlugin extends Plugin {
                 "com.vivo.filemanager" // Vivo File Manager
             };
             
-            boolean opened = false;
             for (String packageName : fileManagerPackages) {
-                Intent specificIntent = new Intent(Intent.ACTION_VIEW);
-                specificIntent.setDataAndType(folderUri, "resource/folder");
-                specificIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                specificIntent.setPackage(packageName);
-                
                 try {
-                    getContext().startActivity(specificIntent);
+                    Intent fileManagerIntent = new Intent(Intent.ACTION_VIEW);
+                    fileManagerIntent.setDataAndType(Uri.fromFile(folder), "resource/folder");
+                    fileManagerIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    fileManagerIntent.setPackage(packageName);
+                    
+                    getContext().startActivity(fileManagerIntent);
                     opened = true;
+                    Log.d(TAG, "Opened with file manager: " + packageName);
                     break;
                 } catch (Exception e) {
-                    // This file manager is not available, try the next one
                     Log.d(TAG, "File manager not available: " + packageName);
                 }
             }
             
-            // If no specific file manager worked, fall back to chooser
+            // 방법 2: DocumentsUI로 폴더 열기 시도
             if (!opened) {
-                Intent chooser = Intent.createChooser(intent, "Open Folder with");
-                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                getContext().startActivity(chooser);
+                try {
+                    Intent documentsIntent = new Intent(Intent.ACTION_VIEW);
+                    documentsIntent.setDataAndType(Uri.fromFile(folder), "resource/folder");
+                    documentsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    documentsIntent.setPackage("com.android.documentsui");
+                    getContext().startActivity(documentsIntent);
+                    opened = true;
+                    Log.d(TAG, "Opened with DocumentsUI");
+                } catch (Exception e) {
+                    Log.d(TAG, "DocumentsUI not available");
+                }
+            }
+            
+            // 방법 3: 일반적인 폴더 열기 시도
+            if (!opened) {
+                try {
+                    Intent folderIntent = new Intent(Intent.ACTION_VIEW);
+                    folderIntent.setDataAndType(Uri.fromFile(folder), "resource/folder");
+                    folderIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    
+                    Intent chooser = Intent.createChooser(folderIntent, "폴더 열기");
+                    chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    getContext().startActivity(chooser);
+                    opened = true;
+                    Log.d(TAG, "Opened with chooser");
+                } catch (Exception e) {
+                    Log.d(TAG, "Chooser failed: " + e.getMessage());
+                }
+            }
+            
+            // 방법 4: 파일 경로를 클립보드에 복사하고 알림 표시
+            if (!opened) {
+                try {
+                    android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+                    android.content.ClipData clip = android.content.ClipData.newPlainText("폴더 경로", folder.getAbsolutePath());
+                    clipboard.setPrimaryClip(clip);
+                    
+                    Log.d(TAG, "Folder path copied to clipboard: " + folder.getAbsolutePath());
+                    call.resolve(new JSObject().put("message", "폴더 경로가 클립보드에 복사되었습니다: " + folder.getAbsolutePath()));
+                    return;
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to copy to clipboard: " + e.getMessage());
+                }
             }
 
             call.resolve();
