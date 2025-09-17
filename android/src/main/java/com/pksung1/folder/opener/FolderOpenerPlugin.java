@@ -27,19 +27,34 @@ public class FolderOpenerPlugin extends Plugin {
             return;
         }
 
-        // URL 디코드 처리
-        String decodedFilePath;
+        // file:// URI 처리
+        String actualFilePath;
         try {
-            decodedFilePath = URLDecoder.decode(filePath, StandardCharsets.UTF_8.toString());
+            if (filePath.startsWith("file://")) {
+                // file:// URI에서 실제 경로 추출
+                Uri uri = Uri.parse(filePath);
+                actualFilePath = uri.getPath();
+                if (actualFilePath == null) {
+                    actualFilePath = filePath.substring(7); // "file://" 제거
+                }
+            } else {
+                actualFilePath = filePath;
+            }
+            
+            // URL 디코드 처리
+            actualFilePath = URLDecoder.decode(actualFilePath, StandardCharsets.UTF_8.toString());
+            Log.d(TAG, "Original path: " + filePath);
+            Log.d(TAG, "Processed path: " + actualFilePath);
         } catch (Exception e) {
-            Log.w(TAG, "Failed to decode file path, using original: " + e.getMessage());
-            decodedFilePath = filePath;
+            Log.w(TAG, "Failed to process file path, using original: " + e.getMessage());
+            actualFilePath = filePath;
         }
 
         try {
-            File file = new File(decodedFilePath);
+            File file = new File(actualFilePath);
+            Log.d(TAG, "File exists check: " + file.getAbsolutePath() + " - " + file.exists());
             if (!file.exists()) {
-                call.reject("File does not exist");
+                call.reject("File does not exist at path: " + actualFilePath);
                 return;
             }
 
