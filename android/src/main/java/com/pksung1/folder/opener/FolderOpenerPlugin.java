@@ -65,40 +65,54 @@ public class FolderOpenerPlugin extends Plugin {
                 return;
             }
 
-            // 폴더 열기 방법 1: 파일 매니저 앱으로 폴더 열기
+            // 폴더 열기 방법들을 순차적으로 시도
             boolean opened = false;
             
-            // 먼저 일반적인 파일 매니저 앱들로 시도
-            String[] fileManagerPackages = {
-                "com.android.documentsui", // Android Files app
-                "com.google.android.documentsui", // Google Files app
-                "com.samsung.android.app.myfiles", // Samsung My Files
-                "com.sec.android.app.myfiles", // Samsung My Files (older)
-                "com.mi.android.globalFileexplorer", // MI File Manager
-                "com.oneplus.filemanager", // OnePlus File Manager
-                "com.huawei.filemanager", // Huawei File Manager
-                "com.lenovo.FileManager", // Lenovo File Manager
-                "com.oppo.filemanager", // OPPO File Manager
-                "com.vivo.filemanager" // Vivo File Manager
-            };
+            Log.d(TAG, "Attempting to open folder: " + folder.getAbsolutePath());
             
-            for (String packageName : fileManagerPackages) {
+            // 방법 1: 가장 기본적인 파일 매니저 열기
+            if (!opened) {
                 try {
-                    Intent fileManagerIntent = new Intent(Intent.ACTION_VIEW);
-                    fileManagerIntent.setDataAndType(Uri.fromFile(folder), "resource/folder");
-                    fileManagerIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    fileManagerIntent.setPackage(packageName);
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setDataAndType(Uri.fromFile(folder), "*/*");
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     
-                    getContext().startActivity(fileManagerIntent);
-                    opened = true;
-                    Log.d(TAG, "Opened with file manager: " + packageName);
-                    break;
+                    // 사용 가능한 앱이 있는지 확인
+                    if (intent.resolveActivity(getContext().getPackageManager()) != null) {
+                        getContext().startActivity(intent);
+                        opened = true;
+                        Log.d(TAG, "Opened with basic file manager");
+                    } else {
+                        Log.d(TAG, "No app can handle this intent");
+                    }
                 } catch (Exception e) {
-                    Log.d(TAG, "File manager not available: " + packageName);
+                    Log.d(TAG, "Basic file manager failed: " + e.getMessage());
                 }
             }
             
-            // 방법 2: DocumentsUI로 폴더 열기 시도
+            // 방법 1-2: ACTION_GET_CONTENT로 폴더 선택 시도
+            if (!opened) {
+                try {
+                    Intent getContentIntent = new Intent(Intent.ACTION_GET_CONTENT);
+                    getContentIntent.setType("*/*");
+                    getContentIntent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+                    getContentIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    
+                    if (getContentIntent.resolveActivity(getContext().getPackageManager()) != null) {
+                        Intent chooser1 = Intent.createChooser(getContentIntent, "폴더 선택");
+                        chooser1.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        getContext().startActivity(chooser1);
+                        opened = true;
+                        Log.d(TAG, "Opened with ACTION_GET_CONTENT");
+                    } else {
+                        Log.d(TAG, "No app can handle ACTION_GET_CONTENT");
+                    }
+                } catch (Exception e) {
+                    Log.d(TAG, "ACTION_GET_CONTENT failed: " + e.getMessage());
+                }
+            }
+            
+            // 방법 2: DocumentsUI로 직접 폴더 열기
             if (!opened) {
                 try {
                     Intent documentsIntent = new Intent(Intent.ACTION_VIEW);
@@ -109,11 +123,43 @@ public class FolderOpenerPlugin extends Plugin {
                     opened = true;
                     Log.d(TAG, "Opened with DocumentsUI");
                 } catch (Exception e) {
-                    Log.d(TAG, "DocumentsUI not available");
+                    Log.d(TAG, "DocumentsUI failed: " + e.getMessage());
                 }
             }
             
-            // 방법 3: 일반적인 폴더 열기 시도
+            // 방법 3: 파일 매니저 앱들로 시도
+            if (!opened) {
+                String[] fileManagerPackages = {
+                    "com.android.documentsui", // Android Files app
+                    "com.google.android.documentsui", // Google Files app
+                    "com.samsung.android.app.myfiles", // Samsung My Files
+                    "com.sec.android.app.myfiles", // Samsung My Files (older)
+                    "com.mi.android.globalFileexplorer", // MI File Manager
+                    "com.oneplus.filemanager", // OnePlus File Manager
+                    "com.huawei.filemanager", // Huawei File Manager
+                    "com.lenovo.FileManager", // Lenovo File Manager
+                    "com.oppo.filemanager", // OPPO File Manager
+                    "com.vivo.filemanager" // Vivo File Manager
+                };
+                
+                for (String packageName : fileManagerPackages) {
+                    try {
+                        Intent fileManagerIntent = new Intent(Intent.ACTION_VIEW);
+                        fileManagerIntent.setDataAndType(Uri.fromFile(folder), "resource/folder");
+                        fileManagerIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        fileManagerIntent.setPackage(packageName);
+                        
+                        getContext().startActivity(fileManagerIntent);
+                        opened = true;
+                        Log.d(TAG, "Opened with file manager: " + packageName);
+                        break;
+                    } catch (Exception e) {
+                        Log.d(TAG, "File manager not available: " + packageName + " - " + e.getMessage());
+                    }
+                }
+            }
+            
+            // 방법 4: 일반적인 폴더 열기 시도
             if (!opened) {
                 try {
                     Intent folderIntent = new Intent(Intent.ACTION_VIEW);
@@ -127,6 +173,23 @@ public class FolderOpenerPlugin extends Plugin {
                     Log.d(TAG, "Opened with chooser");
                 } catch (Exception e) {
                     Log.d(TAG, "Chooser failed: " + e.getMessage());
+                }
+            }
+            
+            // 방법 5: 파일 경로로 파일 매니저 열기
+            if (!opened) {
+                try {
+                    Intent fileManagerIntent = new Intent(Intent.ACTION_VIEW);
+                    fileManagerIntent.setDataAndType(Uri.fromFile(folder), "*/*");
+                    fileManagerIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    
+                    Intent chooser = Intent.createChooser(fileManagerIntent, "파일 매니저로 열기");
+                    chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    getContext().startActivity(chooser);
+                    opened = true;
+                    Log.d(TAG, "Opened with file manager chooser");
+                } catch (Exception e) {
+                    Log.d(TAG, "File manager chooser failed: " + e.getMessage());
                 }
             }
             
