@@ -11,6 +11,8 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import java.io.File;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 @CapacitorPlugin(name = "FolderOpener")
 public class FolderOpenerPlugin extends Plugin {
@@ -25,8 +27,17 @@ public class FolderOpenerPlugin extends Plugin {
             return;
         }
 
+        // URL 디코드 처리
+        String decodedFilePath;
         try {
-            File file = new File(filePath);
+            decodedFilePath = URLDecoder.decode(filePath, StandardCharsets.UTF_8.toString());
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to decode file path, using original: " + e.getMessage());
+            decodedFilePath = filePath;
+        }
+
+        try {
+            File file = new File(decodedFilePath);
             if (!file.exists()) {
                 call.reject("File does not exist");
                 return;
