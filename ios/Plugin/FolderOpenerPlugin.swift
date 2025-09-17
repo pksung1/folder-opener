@@ -28,18 +28,37 @@ public class FolderOpenerPlugin: CAPPlugin {
         
         DispatchQueue.main.async {
             if #available(iOS 13.0, *) {
-                // For iOS 13 and later, we can use UIApplication.shared.open
-                let activityVC = UIActivityViewController(activityItems: [folderURL], applicationActivities: nil)
+                // Files 앱을 열고 해당 폴더로 이동
+                let filesAppURL = URL(string: "shareddocuments://\(folderURL.path)")!
                 
-                if let viewController = self.bridge?.viewController,
-                   let sourceView = viewController.view {
+                if UIApplication.shared.canOpenURL(filesAppURL) {
+                    UIApplication.shared.open(filesAppURL, options: [:]) { success in
+                        if success {
+                            call.resolve()
+                        } else {
+                            call.reject("Could not open folder in Files app")
+                        }
+                    }
+                } else {
+                    // Files 앱이 없는 경우 UIDocumentInteractionController 사용
+                    let documentController = UIDocumentInteractionController(url: folderURL)
+                    documentController.delegate = self
                     
-                    activityVC.popoverPresentationController?.sourceView = sourceView
-                    activityVC.popoverPresentationController?.sourceRect = CGRect(x: sourceView.bounds.midX, y: sourceView.bounds.midY, width: 1, height: 1)
+                    if let viewController = self.bridge?.viewController,
+                       let sourceView = viewController.view {
+                        
+                        let rect = CGRect(x: sourceView.bounds.midX, y: sourceView.bounds.midY, width: 1, height: 1)
+                        let presented = documentController.presentOptionsMenu(from: rect, in: sourceView, animated: true)
+                        
+                        if presented {
+                            call.resolve()
+                        } else {
+                            call.reject("Could not present folder options")
+                        }
+                    } else {
+                        call.reject("Could not access view controller")
+                    }
                 }
-                
-                self.bridge?.viewController?.present(activityVC, animated: true, completion: nil)
-                call.resolve()
             } else {
                 // For older iOS versions, use UIDocumentInteractionController
                 let documentController = UIDocumentInteractionController(url: folderURL)

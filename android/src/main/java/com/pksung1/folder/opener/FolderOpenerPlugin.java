@@ -39,6 +39,7 @@ public class FolderOpenerPlugin extends Plugin {
                 return;
             }
 
+            // Try to open with specific file manager apps first
             Intent intent = new Intent(Intent.ACTION_VIEW);
             Uri folderUri;
 
@@ -57,10 +58,43 @@ public class FolderOpenerPlugin extends Plugin {
             intent.setDataAndType(folderUri, "resource/folder");
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             
-            // Create a chooser to let the user select which app to use
-            Intent chooser = Intent.createChooser(intent, "Open Folder with");
-            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getContext().startActivity(chooser);
+            // Try to open with specific file manager apps
+            String[] fileManagerPackages = {
+                "com.android.documentsui", // Android Files app
+                "com.google.android.documentsui", // Google Files app
+                "com.samsung.android.app.myfiles", // Samsung My Files
+                "com.sec.android.app.myfiles", // Samsung My Files (older)
+                "com.mi.android.globalFileexplorer", // MI File Manager
+                "com.oneplus.filemanager", // OnePlus File Manager
+                "com.huawei.filemanager", // Huawei File Manager
+                "com.lenovo.FileManager", // Lenovo File Manager
+                "com.oppo.filemanager", // OPPO File Manager
+                "com.vivo.filemanager" // Vivo File Manager
+            };
+            
+            boolean opened = false;
+            for (String packageName : fileManagerPackages) {
+                Intent specificIntent = new Intent(Intent.ACTION_VIEW);
+                specificIntent.setDataAndType(folderUri, "resource/folder");
+                specificIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                specificIntent.setPackage(packageName);
+                
+                try {
+                    getContext().startActivity(specificIntent);
+                    opened = true;
+                    break;
+                } catch (Exception e) {
+                    // This file manager is not available, try the next one
+                    Log.d(TAG, "File manager not available: " + packageName);
+                }
+            }
+            
+            // If no specific file manager worked, fall back to chooser
+            if (!opened) {
+                Intent chooser = Intent.createChooser(intent, "Open Folder with");
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(chooser);
+            }
 
             call.resolve();
         } catch (Exception e) {
