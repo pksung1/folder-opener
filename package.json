@@ -1,5 +1,5 @@
 {
-  "name": "folder-opener",
+  "name": "@pksung1/folder-opener",
   "version": "0.0.1",
   "description": "Capacitor Folder Opener. The plugin is able to open a folder containing a specified file.",
   "main": "dist/plugin.cjs.js",
@@ -31,19 +31,7 @@
     "directory"
   ],
   "scripts": {
-    "verify": "npm run verify:ios && npm run verify:android",
-    "verify:ios": "cd ios && pod install && xcodebuild -workspace Plugin.xcworkspace -scheme Plugin -destination generic/platform=iOS && cd ..",
-    "verify:android": "cd android && ./gradlew clean build test && cd ..",
-    "lint": "npm run eslint && npm run prettier -- --check && npm run swiftlint -- lint",
-    "fmt": "npm run eslint -- --fix && npm run prettier -- --write && npm run swiftlint -- --fix --format",
-    "eslint": "eslint . --ext ts",
-    "prettier": "prettier \"**/*.{css,html,ts,js,java}\" --plugin=prettier-plugin-java",
-    "swiftlint": "node-swiftlint",
-    "docgen": "docgen --api FolderOpenerPlugin --output-readme README.md --output-json dist/docs.json",
-    "build": "npm run clean && npm run docgen && tsc && rollup --bundleConfigAsCjs -c rollup.config.mjs",
-    "clean": "rimraf ./dist",
-    "watch": "tsc --watch",
-    "prepublishOnly": "npm run build"
+    "build": "rollup -c rollup.config.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^7.0.0",
@@ -62,7 +50,7 @@
     "rimraf": "^6.0.1",
     "rollup": "^4.30.1",
     "swiftlint": "^2.0.0",
-    "typescript": "^4.8.4"
+    "typescript": "^5.0.0"
   },
   "peerDependencies": {
     "@capacitor/core": ">=7.0.0"

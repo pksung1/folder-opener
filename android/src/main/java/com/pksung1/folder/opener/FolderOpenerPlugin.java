@@ -1,4 +1,4 @@
-package com.pksung1.plugins.folder.opener;
+package com.pksung1.folder.opener;
 
 import android.content.Intent;
 import android.net.Uri;

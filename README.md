@@ -24,7 +24,7 @@ npx cap sync
 ### open(...)
 
 ```typescript
-open(options: FolderOpenerOptions) => any
+open(options: FolderOpenerOptions) => Promise<void>
 ```
 
 Method to open the folder containing the specified file.
@@ -32,8 +32,6 @@ Method to open the folder containing the specified file.
 | Param         | Type                                                                |
 | ------------- | ------------------------------------------------------------------- |
 | **`options`** | <code><a href="#folderopeneroptions">FolderOpenerOptions</a></code> |
-
-**Returns:** <code>any</code>
 
 **Since:** 1.0.0
 

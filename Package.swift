@@ -2,13 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "FolderOpener",
+    name: "Pksung1FolderOpener",
     platforms: [
         .iOS(.v14)
     ],
     products: [
         .library(
-            name: "FolderOpener",
+            name: "Pksung1FolderOpener",
             targets: ["FolderOpenerPlugin"])
     ],
     dependencies: [
