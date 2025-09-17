@@ -18,23 +18,24 @@ public class FolderOpenerPlugin extends Plugin {
 
     @PluginMethod
     public void open(PluginCall call) {
-        String folderPath = call.getString("folderPath");
-        Boolean openWithDefault = call.getBoolean("openWithDefault", true);
+        String filePath = call.getString("filePath");
 
-        if (folderPath == null) {
-            call.reject("Folder path is required");
+        if (filePath == null) {
+            call.reject("File path is required");
             return;
         }
 
         try {
-            File folder = new File(folderPath);
-            if (!folder.exists()) {
-                call.reject("Folder does not exist");
+            File file = new File(filePath);
+            if (!file.exists()) {
+                call.reject("File does not exist");
                 return;
             }
 
-            if (!folder.isDirectory()) {
-                call.reject("Path is not a directory");
+            // Get the parent folder
+            File folder = file.getParentFile();
+            if (folder == null || !folder.exists()) {
+                call.reject("Parent folder does not exist");
                 return;
             }
 
@@ -54,15 +55,12 @@ public class FolderOpenerPlugin extends Plugin {
             }
 
             intent.setDataAndType(folderUri, "resource/folder");
-
-            if (openWithDefault) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                getContext().startActivity(intent);
-            } else {
-                Intent chooser = Intent.createChooser(intent, "Open Folder with");
-                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                getContext().startActivity(chooser);
-            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            
+            // Create a chooser to let the user select which app to use
+            Intent chooser = Intent.createChooser(intent, "Open Folder with");
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(chooser);
 
             call.resolve();
         } catch (Exception e) {

@@ -8,44 +8,33 @@ import Capacitor
 public class FolderOpenerPlugin: CAPPlugin {
     
     @objc func open(_ call: CAPPluginCall) {
-        guard let folderPath = call.getString("folderPath") else {
-            call.reject("Folder path is required")
+        guard let filePath = call.getString("filePath") else {
+            call.reject("File path is required")
             return
         }
-        
-        let openWithDefault = call.getBool("openWithDefault", true)
         
         let fileManager = FileManager.default
         
-        // Check if the folder exists
-        var isDir: ObjCBool = false
-        if !fileManager.fileExists(atPath: folderPath, isDirectory: &isDir) {
-            call.reject("Folder does not exist")
+        // Check if the file exists
+        if !fileManager.fileExists(atPath: filePath) {
+            call.reject("File does not exist")
             return
         }
         
-        if !isDir.boolValue {
-            call.reject("Path is not a directory")
-            return
-        }
-        
-        let folderURL = URL(fileURLWithPath: folderPath)
+        // Get the folder containing the file
+        let fileURL = URL(fileURLWithPath: filePath)
+        let folderURL = fileURL.deletingLastPathComponent()
         
         DispatchQueue.main.async {
             if #available(iOS 13.0, *) {
                 // For iOS 13 and later, we can use UIApplication.shared.open
                 let activityVC = UIActivityViewController(activityItems: [folderURL], applicationActivities: nil)
                 
-                if let chooserPosition = call.getObject("chooserPosition") as? [String: Any],
-                   let x = chooserPosition["x"] as? Double,
-                   let y = chooserPosition["y"] as? Double,
-                   let viewController = self.bridge?.viewController,
-                   let sourceView = viewController.view,
-                   !openWithDefault,
-                   UIDevice.current.userInterfaceIdiom == .pad {
+                if let viewController = self.bridge?.viewController,
+                   let sourceView = viewController.view {
                     
                     activityVC.popoverPresentationController?.sourceView = sourceView
-                    activityVC.popoverPresentationController?.sourceRect = CGRect(x: x, y: y, width: 1, height: 1)
+                    activityVC.popoverPresentationController?.sourceRect = CGRect(x: sourceView.bounds.midX, y: sourceView.bounds.midY, width: 1, height: 1)
                 }
                 
                 self.bridge?.viewController?.present(activityVC, animated: true, completion: nil)
@@ -55,15 +44,10 @@ public class FolderOpenerPlugin: CAPPlugin {
                 let documentController = UIDocumentInteractionController(url: folderURL)
                 documentController.delegate = self
                 
-                if let chooserPosition = call.getObject("chooserPosition") as? [String: Any],
-                   let x = chooserPosition["x"] as? Double,
-                   let y = chooserPosition["y"] as? Double,
-                   let viewController = self.bridge?.viewController,
-                   let sourceView = viewController.view,
-                   !openWithDefault,
-                   UIDevice.current.userInterfaceIdiom == .pad {
+                if let viewController = self.bridge?.viewController,
+                   let sourceView = viewController.view {
                     
-                    let rect = CGRect(x: x, y: y, width: 1, height: 1)
+                    let rect = CGRect(x: sourceView.bounds.midX, y: sourceView.bounds.midY, width: 1, height: 1)
                     let presented = documentController.presentOptionsMenu(from: rect, in: sourceView, animated: true)
                     
                     if presented {

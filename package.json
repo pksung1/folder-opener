@@ -1,7 +1,7 @@
 {
   "name": "folder-opener",
   "version": "0.0.1",
-  "description": "Capacitor Folder Opener. The plugin is able to open a folder given the folder path.",
+  "description": "Capacitor Folder Opener. The plugin is able to open a folder containing a specified file.",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
@@ -53,6 +53,7 @@
     "@ionic/eslint-config": "^0.4.0",
     "@ionic/prettier-config": "^4.0.0",
     "@ionic/swiftlint-config": "^2.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
     "@typescript-eslint/eslint-plugin": "^8.4.0",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.31.0",

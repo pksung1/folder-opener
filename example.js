@@ -1,15 +1,13 @@
 // Example usage of the folder-opener plugin
+/* eslint-disable no-console */
 
 import { FolderOpener } from 'folder-opener';
 
-// Function to open a folder
-async function openFolder(folderPath) {
+// Function to open a folder containing a file
+async function openFolderContainingFile(filePath) {
   try {
     await FolderOpener.open({
-      folderPath: folderPath,
-      // Optional parameters
-      openWithDefault: true,
-      // chooserPosition: { x: 100, y: 100 } // iOS only, iPad only
+      filePath: filePath
     });
     console.log('Folder opened successfully');
   } catch (error) {
@@ -18,12 +16,12 @@ async function openFolder(folderPath) {
 }
 
 // Example usage
-// Replace with an actual folder path on your device
-const folderPath = '/path/to/your/folder';
-openFolder(folderPath);
+// Replace with an actual file path on your device
+const filePath = '/path/to/your/file.txt';
+openFolderContainingFile(filePath);
 
 // For Android, you might use something like:
-// const folderPath = '/storage/emulated/0/Download';
+// const filePath = '/storage/emulated/0/Download/document.pdf';
 
 // For iOS, you might use something like:
-// const folderPath = '/var/mobile/Containers/Data/Application/...';
+// const filePath = '/var/mobile/Containers/Data/Application/.../document.pdf';
