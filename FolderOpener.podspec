@@ -1,7 +1,7 @@
   Pod::Spec.new do |s|
     s.name = 'FolderOpener'
     s.version = '1.0.0'
-    s.summary = 'Capacitor plugin for opening folders in the file system'
+    s.summary = 'Capacitor plugin for opening folders containing a specified file'
     s.license = 'MIT'
     s.homepage = 'https://github.com/pksung1/folder-opener'
     s.author = 'Seon Park'
